@@ -1,0 +1,28 @@
+# Agregar este servicio al docker-compose.yml del droplet donde corren backend y frontend de Axis.
+# Estructura sugerida en el droplet:
+#   ~/apps/arca-mcp/          <- git clone del repo
+#   ~/apps/axis/arca/config/emisores.yaml
+#   ~/apps/axis/arca/certs/*.crt|*.key
+#   ~/apps/axis/arca/.env
+services:
+  arca-mcp:
+    build: ../arca-mcp
+    container_name: arca-mcp
+    restart: unless-stopped
+    env_file: ./arca/.env
+    environment:
+      ARCA_CONFIG: /app/config/emisores.yaml
+    volumes:
+      - ./arca/config:/app/config:ro
+      - ./arca/certs:/certs:ro
+      - arca-data:/data
+    expose:
+      - "8000"    # sin "ports": solo accesible desde la red interna de Docker
+    mem_limit: 256m
+
+volumes:
+  arca-data:
+
+# Desde el backend de Axis (o el agente), en la misma red de compose:
+#   URL:    http://arca-mcp:8000/mcp
+#   Header: Authorization: Bearer $ARCA_API_KEY_AXIS

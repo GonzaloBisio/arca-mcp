@@ -1,0 +1,8 @@
+.venv
+.git
+tests
+certs
+config/emisores.yaml
+.env
+**/__pycache__
+.pytest_cache

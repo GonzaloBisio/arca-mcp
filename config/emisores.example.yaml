@@ -1,0 +1,32 @@
+# Copiar a config/emisores.yaml (no se versiona)
+ambiente: homologacion        # homologacion | produccion
+db_path: /data/arca.db
+preview_ttl_minutos: 15
+legacy_tls: true              # necesario para algunos endpoints de ARCA con OpenSSL 3
+timeout_segundos: 30
+
+emisores:
+  - id: gon-personal
+    cuit: 20123456786         # reemplazar por tu CUIT
+    razon_social: Gonzalo (homologación)
+    condicion_iva: monotributo
+    puntos_venta: [1]
+    certificado: /certs/gon-personal.crt
+    clave_privada: /certs/gon-personal.key
+
+  # Con delegación de wsfe, varios emisores pueden compartir el mismo certificado:
+  # - id: kiosco-demo
+  #   cuit: 30XXXXXXXXX
+  #   razon_social: Kiosco Demo SRL
+  #   condicion_iva: responsable_inscripto
+  #   puntos_venta: [3]
+  #   certificado: /certs/one-core-labs.crt
+  #   clave_privada: /certs/one-core-labs.key
+
+clientes:
+  - nombre: personal
+    api_key_env: ARCA_API_KEY_PERSONAL
+    emisores: [gon-personal]
+  - nombre: axis
+    api_key_env: ARCA_API_KEY_AXIS
+    emisores: [gon-personal]
