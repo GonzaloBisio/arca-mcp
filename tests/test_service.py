@@ -1,5 +1,5 @@
 import pytest
-from conftest import factura_c
+from conftest import factura_c, nota_credito_c, nota_credito_b
 
 from arca_mcp.core.errors import EstadoIncierto, NoAutorizado, PreviewInvalido, ValidacionError
 from arca_mcp.core.models import Cliente, Preview, ResultadoEmision
@@ -76,3 +76,39 @@ def test_timeout_al_enviar_queda_incierto(service, axis, gateway):
         service.emitir(axis, p.preview_id)
     with pytest.raises(PreviewInvalido, match="incierto"):
         service.emitir(axis, p.preview_id)
+
+
+# ---------- Notas de crédito / débito ----------
+
+def test_preview_nota_credito_c(service, axis):
+    p = service.preview(axis, nota_credito_c())
+    assert isinstance(p, Preview)
+    assert p.numero_estimado == 1
+
+
+def test_emision_nota_credito_c(service, axis):
+    p = service.preview(axis, nota_credito_c())
+    r = service.emitir(axis, p.preview_id)
+    assert r.estado == "aprobado" and r.numero == 1 and r.cae
+
+
+def test_emision_nota_credito_b(service, axis):
+    p = service.preview(axis, nota_credito_b())
+    r = service.emitir(axis, p.preview_id)
+    assert r.estado == "aprobado" and r.numero == 1 and r.cae
+
+
+def test_nota_credito_c_tiene_asociados_en_solicitud(service, axis, gateway):
+    nc = nota_credito_c()
+    assert len(nc.comprobantes_asociados) == 1
+    assert nc.comprobantes_asociados[0].tipo.value == "factura_c"
+    assert nc.comprobantes_asociados[0].numero == 1
+
+
+def test_gateway_recibe_comprobantes_asociados(service, axis, gateway):
+    p = service.preview(axis, nota_credito_c())
+    service.emitir(axis, p.preview_id)
+    assert len(gateway.solicitudes) == 1
+    solicitud = gateway.solicitudes[0]["solicitud"]
+    assert len(solicitud.comprobantes_asociados) == 1
+    assert solicitud.comprobantes_asociados[0].tipo.value == "factura_c"

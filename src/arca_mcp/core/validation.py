@@ -4,11 +4,16 @@ from __future__ import annotations
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
-from .models import Concepto, CondicionIvaReceptor, DocTipo, Emisor, SolicitudComprobante
+from .models import Concepto, CondicionIvaReceptor, DocTipo, Emisor, SolicitudComprobante, TipoComprobante
 
 CENTAVO = Decimal("0.01")
 TOLERANCIA = Decimal("0.01")
 _PESOS_CUIT = (5, 4, 3, 2, 7, 6, 5, 4, 3, 2)
+
+
+def _clase_de_tipo(tipo: TipoComprobante) -> str:
+    """Extrae la clase (A, B o C) de un TipoComprobante."""
+    return tipo.clase
 
 
 def cuit_valido(numero: int) -> bool:
@@ -25,6 +30,19 @@ def validar(s: SolicitudComprobante, emisor: Emisor, hoy: date) -> list[str]:
     errores: list[str] = []
     clase = s.tipo.clase
     r, imp = s.receptor, s.importes
+
+    # Notas de crédito/débito
+    es_nota = s.tipo.value.startswith("nota_")
+    if es_nota and not s.comprobantes_asociados:
+        errores.append("Una nota de crédito o débito debe tener al menos un comprobante asociado.")
+    if not es_nota and s.comprobantes_asociados:
+        errores.append("Solo las notas de crédito/débito pueden tener comprobantes asociados.")
+
+    # Validar que la clase de los comprobantes asociados coincida con la clase de la nota
+    for asoc in s.comprobantes_asociados:
+        clase_asociada = _clase_de_tipo(asoc.tipo)
+        if clase_asociada != clase:
+            errores.append(f"La clase del comprobante asociado ({clase_asociada}) no coincide con la clase de la nota ({clase}).")
 
     # Emisor y punto de venta
     if s.punto_venta not in emisor.puntos_venta:

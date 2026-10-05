@@ -64,6 +64,9 @@ def build_server(service: InvoiceService, clientes: dict[str, Cliente]) -> MCPSe
         neto_gravado + no_gravado + exento + iva. En factura C, todo el total va en neto_gravado,
         iva = 0 y alicuotas vacío. La referencia (sistema + id de la venta) evita facturar dos veces
         la misma operación: si ya fue facturada, se devuelve la factura existente con estado 'ya_emitido'.
+
+        Para notas de crédito/débito, incluir comprobantes_asociados con la referencia al comprobante
+        original (tipo, punto_venta, numero, opcionalmente cuit y fecha).
         """
         resultado = await ejecutar(service.preview, cliente_de(ctx), solicitud)
         if isinstance(resultado, ResultadoEmision):
@@ -103,7 +106,7 @@ def build_server(service: InvoiceService, clientes: dict[str, Cliente]) -> MCPSe
 
 def _resumen_preview(p: Preview) -> dict[str, Any]:
     s = p.solicitud
-    return {
+    resumen = {
         "estado": "pendiente_de_confirmacion",
         "preview_id": p.preview_id,
         "expira": p.expira.isoformat(),
@@ -120,3 +123,9 @@ def _resumen_preview(p: Preview) -> dict[str, Any]:
         },
         "siguiente_paso": "Mostrar este resumen al usuario y, solo si confirma, llamar emit_invoice.",
     }
+    if s.comprobantes_asociados:
+        resumen["resumen"]["comprobantes_asociados"] = [
+            f"{asoc.tipo.value} PV {asoc.punto_venta:05d} N° {asoc.numero}"
+            for asoc in s.comprobantes_asociados
+        ]
+    return resumen

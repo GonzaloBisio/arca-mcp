@@ -99,7 +99,7 @@ Los tests usan un gateway falso y no tocan ARCA.
 
 ## Pendiente (siguientes fases)
 
-- Notas de crédito/débito (comprobantes asociados) y tributos.
+- Tributos adicionales (RG 4127, RG 5631).
 - Moneda extranjera (cotización y `CanMisMonExt`).
 - Postgres + advisory locks para correr varias réplicas.
 - Generación de PDF con QR fiscal.

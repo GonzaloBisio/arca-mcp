@@ -46,7 +46,8 @@ docker compose -f deploy/compose.arca.yml config   # validar compose
 ## Estado y próximos pasos
 - [x] Fase 1: core, WSAA, WSFEv1 (facturas A/B/C), MCP HTTP, SQLite, Docker, 29 tests.
 - [x] Probar emisión real en homologación (Factura C monotributo): PV 1 N° 1 aprobada con CAE el 2026-10-04.
-- [ ] Notas de crédito/débito (`CbtesAsoc`) y tributos.
+- [x] Notas de crédito/débito (A/B/C, `CbtesAsoc`).
+- [ ] Tributos adicionales (RG 4127, RG 5631).
 - [ ] Moneda extranjera (`MonCotiz`, `CanMisMonExt`).
 - [ ] Postgres + advisory locks.
 - [ ] PDF con QR fiscal.

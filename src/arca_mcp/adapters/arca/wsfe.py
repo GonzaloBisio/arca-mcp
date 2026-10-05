@@ -73,6 +73,17 @@ class WsfeGateway:
                 {"Id": a.alicuota.codigo, "BaseImp": float(a.base_imponible), "Importe": float(a.importe)}
                 for a in s.alicuotas
             ]}
+        if s.comprobantes_asociados:
+            det["CbtesAsoc"] = {"CbteAsoc": [
+                {
+                    "Tipo": asoc.tipo.codigo,
+                    "PtoVta": asoc.punto_venta,
+                    "Nro": asoc.numero,
+                    **({"Cuit": asoc.cuit} if asoc.cuit is not None else {}),
+                    **({"CbteFch": asoc.fecha.strftime("%Y%m%d")} if asoc.fecha is not None else {}),
+                }
+                for asoc in s.comprobantes_asociados
+            ]}
         req = {
             "FeCabReq": {"CantReg": 1, "PtoVta": s.punto_venta, "CbteTipo": s.tipo.codigo},
             "FeDetReq": {"FECAEDetRequest": [det]},

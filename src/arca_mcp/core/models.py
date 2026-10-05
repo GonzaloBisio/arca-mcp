@@ -16,6 +16,12 @@ class TipoComprobante(str, Enum):
     FACTURA_A = "factura_a"
     FACTURA_B = "factura_b"
     FACTURA_C = "factura_c"
+    NOTA_CREDITO_A = "nota_credito_a"
+    NOTA_CREDITO_B = "nota_credito_b"
+    NOTA_CREDITO_C = "nota_credito_c"
+    NOTA_DEBITO_A = "nota_debito_a"
+    NOTA_DEBITO_B = "nota_debito_b"
+    NOTA_DEBITO_C = "nota_debito_c"
 
     @property
     def codigo(self) -> int:
@@ -84,7 +90,17 @@ class Alicuota(str, Enum):
         return Decimal(self.value) / Decimal(100)
 
 
-_COD_TIPO = {TipoComprobante.FACTURA_A: 1, TipoComprobante.FACTURA_B: 6, TipoComprobante.FACTURA_C: 11}
+_COD_TIPO = {
+    TipoComprobante.FACTURA_A: 1,
+    TipoComprobante.FACTURA_B: 6,
+    TipoComprobante.FACTURA_C: 11,
+    TipoComprobante.NOTA_DEBITO_A: 2,
+    TipoComprobante.NOTA_CREDITO_A: 3,
+    TipoComprobante.NOTA_DEBITO_B: 7,
+    TipoComprobante.NOTA_CREDITO_B: 8,
+    TipoComprobante.NOTA_DEBITO_C: 12,
+    TipoComprobante.NOTA_CREDITO_C: 13,
+}
 _COD_CONCEPTO = {Concepto.PRODUCTOS: 1, Concepto.SERVICIOS: 2, Concepto.PRODUCTOS_Y_SERVICIOS: 3}
 _COD_DOC = {DocTipo.CUIT: 80, DocTipo.CUIL: 86, DocTipo.DNI: 96, DocTipo.SIN_IDENTIFICAR: 99}
 _COD_COND_IVA = {
@@ -161,6 +177,15 @@ class ReferenciaExterna(_Estricto):
     id: str = Field(min_length=1, max_length=120)
 
 
+class ComprobanteAsociado(_Estricto):
+    """Referencia a un comprobante asociado (para notas de crédito/débito)."""
+    tipo: TipoComprobante
+    punto_venta: int = Field(ge=1, le=99998)
+    numero: int = Field(ge=1)
+    cuit: int | None = None
+    fecha: date | None = None
+
+
 class SolicitudComprobante(_Estricto):
     emisor_id: str
     tipo: TipoComprobante
@@ -172,6 +197,10 @@ class SolicitudComprobante(_Estricto):
     fecha: date | None = Field(None, description="Por defecto, hoy (hora de Argentina)")
     servicio: PeriodoServicio | None = None
     referencia: ReferenciaExterna
+    comprobantes_asociados: list[ComprobanteAsociado] = Field(
+        default_factory=list,
+        description="Solo para notas de crédito/débito: referencia a comprobante(s) asociado(s)."
+    )
 
 
 # ---------- Salidas ----------

@@ -117,3 +117,23 @@ def test_aislamiento_entre_sistemas(url):
     emisores, intento = llamar(url, KEY_PULPIX, pasos)
     assert emisores == []
     assert intento.is_error and "no está habilitado" in intento.content[0].text
+
+
+def test_flujo_nota_credito_c(url):
+    async def pasos(session):
+        nota_solicitud = {
+            "emisor_id": "mono", "tipo": "nota_credito_c", "punto_venta": 1, "concepto": "productos",
+            "receptor": {"doc_tipo": "sin_identificar", "doc_nro": 0, "condicion_iva": "consumidor_final"},
+            "importes": {"neto_gravado": "1500.00", "total": "1500.00"},
+            "comprobantes_asociados": [{"tipo": "factura_c", "punto_venta": 1, "numero": 1}],
+            "referencia": {"sistema": "axis", "id": "nc-1234"},
+        }
+        preview = datos(await session.call_tool("preview_invoice", {"solicitud": nota_solicitud}))
+        emitida = datos(await session.call_tool("emit_invoice", {"preview_id": preview["preview_id"]}))
+        return preview, emitida
+
+    preview, emitida = llamar(url, KEY_AXIS, pasos)
+    assert preview["estado"] == "pendiente_de_confirmacion"
+    assert "Nota Credito C" in preview["resumen"]["comprobante"]
+    assert preview["resumen"]["comprobantes_asociados"] == ["factura_c PV 00001 N° 1"]
+    assert emitida["estado"] == "aprobado"

@@ -17,12 +17,14 @@ class FakeGateway:
         self.respuesta = "A"
         self.fallar_al_enviar = False
         self.envios = 0
+        self.solicitudes: list = []  # Track all solicitar_cae calls for verification
 
     def ultimo_autorizado(self, emisor, punto_venta, tipo):
         return self.ultimos.get((emisor.cuit, punto_venta, tipo), 0)
 
     def solicitar_cae(self, emisor, s, numero, fecha):
         self.envios += 1
+        self.solicitudes.append({"emisor": emisor, "solicitud": s, "numero": numero, "fecha": fecha})
         if self.fallar_al_enviar:
             raise TimeoutError("ARCA no respondió")
         aprobado = self.respuesta == "A"
@@ -86,6 +88,31 @@ def factura_b(**over) -> SolicitudComprobante:
         "importes": {"neto_gravado": "1000.00", "iva": "210.00", "total": "1210.00"},
         "alicuotas": [{"alicuota": "21", "base_imponible": "1000.00", "importe": "210.00"}],
         "referencia": {"sistema": "axis", "id": "venta-5678"},
+    }
+    datos.update(over)
+    return SolicitudComprobante.model_validate(datos)
+
+
+def nota_credito_c(**over) -> SolicitudComprobante:
+    datos = {
+        "emisor_id": "mono", "tipo": "nota_credito_c", "punto_venta": 1, "concepto": "productos",
+        "receptor": {"doc_tipo": "sin_identificar", "doc_nro": 0, "condicion_iva": "consumidor_final"},
+        "importes": {"neto_gravado": "1500.00", "total": "1500.00"},
+        "comprobantes_asociados": [{"tipo": "factura_c", "punto_venta": 1, "numero": 1}],
+        "referencia": {"sistema": "axis", "id": "nc-1234"},
+    }
+    datos.update(over)
+    return SolicitudComprobante.model_validate(datos)
+
+
+def nota_credito_b(**over) -> SolicitudComprobante:
+    datos = {
+        "emisor_id": "ri", "tipo": "nota_credito_b", "punto_venta": 1, "concepto": "productos",
+        "receptor": {"doc_tipo": "sin_identificar", "doc_nro": 0, "condicion_iva": "consumidor_final"},
+        "importes": {"neto_gravado": "1000.00", "iva": "210.00", "total": "1210.00"},
+        "alicuotas": [{"alicuota": "21", "base_imponible": "1000.00", "importe": "210.00"}],
+        "comprobantes_asociados": [{"tipo": "factura_b", "punto_venta": 1, "numero": 1}],
+        "referencia": {"sistema": "axis", "id": "nc-5678"},
     }
     datos.update(over)
     return SolicitudComprobante.model_validate(datos)
