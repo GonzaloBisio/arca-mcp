@@ -45,15 +45,37 @@ src/arca_mcp/
    ```bash
    openssl genrsa -out certs/gon-personal.key 2048
    openssl req -new -key certs/gon-personal.key \
-     -subj "/C=AR/O=Gonzalo/CN=arca-mcp/serialNumber=CUIT 20XXXXXXXXX" \
+     -subj "/C=AR/O=Gonzalo/CN=arcamcphomo/serialNumber=CUIT 20XXXXXXXXX" \
      -out certs/gon-personal.csr
    ```
 
-2. En ARCA, con clave fiscal, entrá a **WSASS – Autogestión Certificados Homologación**:
-   creá el certificado pegando el CSR, guardá el `.crt` en `certs/` y autorizá el servicio `wsfe`.
+2. En ARCA, con clave fiscal, adherí **WSASS – Autogestión Certificados Homologación** desde
+   *Administrador de Relaciones de Clave Fiscal → Adherir servicio → ARCA → Servicios Interactivos*
+   (no "WebServices"). Después, dentro de WSASS:
+   - **Nuevo certificado**: el nombre simbólico del DN solo admite letras y números (usá el mismo
+     valor que el `CN` del CSR, ej. `arcamcphomo`). Guardá el certificado devuelto en `certs/gon-personal.crt`.
+   - **Crear autorización a servicio**: ese alias, tu CUIT como representado y el servicio `wsfe`.
+     Sin este paso WSAA responde "Computador no autorizado a acceder al servicio".
 3. Copiá `config/emisores.example.yaml` a `config/emisores.yaml` y completá CUIT, punto de venta y rutas.
+   Para correr fuera de Docker usá rutas locales (`certs/...`, `db_path: data/arca.db`).
 4. Copiá `.env.example` a `.env` y generá las keys con `openssl rand -hex 32`.
-5. Local: `pip install -e ".[dev]"` y `ARCA_CONFIG=config/emisores.yaml arca-mcp`.
+5. Local: `pip install -e ".[dev]"`, cargá el `.env` (el servidor no lo lee solo) y levantalo:
+
+   ```bash
+   set -a; source .env; set +a
+   ARCA_CONFIG=config/emisores.yaml LOG_LEVEL=DEBUG arca-mcp   # DEBUG muestra el SOAP con ARCA
+   ```
+
+6. Probá desde otra terminal con `curl` (el transporte es stateless, no hace falta `initialize`):
+
+   ```bash
+   curl -s http://127.0.0.1:8000/mcp -H "Authorization: Bearer $ARCA_API_KEY_PERSONAL" \
+     -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+     -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_last_invoice_number","arguments":{"emisor_id":"gon-personal","tipo":"factura_c","punto_venta":1}}}' | jq
+   ```
+
+   Los comprobantes emitidos en homologación no aparecen en las pantallas web de ARCA:
+   se verifican con `get_invoice`.
 
 ## Despliegue en el droplet
 

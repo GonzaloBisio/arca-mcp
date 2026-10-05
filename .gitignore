@@ -9,3 +9,4 @@ certs/
 *.crt
 *.csr
 *.db
+data/
